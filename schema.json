@@ -1,0 +1,9 @@
+{
+  "person": {
+    "name": "string",
+    "age": "number",
+    "location": { "city": "string" },
+    "isActive": "boolean",
+    "hobbies": "string[]"
+  }
+}
