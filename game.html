@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Click the Target!</title>
+        <link rel="stylesheet" href="game.css">
+    </head>
+    <body>
+        <div id="score">Score: 0</div>
+        <div id="timeLeft">Time Left: 30</div>
+        <div id="gameContainer">
+            <div id="target"></div>
+        </div>
+        <button onclick="startGame()">Start Game</button>
+        <!-- this is a ts file because we have a build step that generates js -->
+        <script src="game.ts"></script>
+    </body>
+</html>
