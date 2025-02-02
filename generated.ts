@@ -1,37 +1,55 @@
 import fs from "fs";
 
-// Function to convert JSON schema to TypeScript type
+/**
+ * Converts a JSON schema to TypeScript type definitions
+ * @param schema - The JSON schema to convert
+ * @param typeName - The name of the type to generate
+ * @returns The TypeScript type definition as a string
+ */
 function jsonSchemaToTypeScript(
   schema: Record<string, any>,
   typeName: string,
 ): string {
-  let typeDefinition = `export const ${typeName} = type({\n`;
-  const newtypes = [];
+  const lines: string[] = [`export const ${typeName} = type({`];
+  const nestedTypes: string[] = [];
+
   for (const [key, value] of Object.entries(schema)) {
     if (typeof value === "string") {
       // Handle primitive types (e.g., "string", "number", "boolean")
-      typeDefinition += `  ${key}: "${value}",\n`;
+      lines.push(`  ${key}: "${value}",`);
     } else if (Array.isArray(value)) {
       // Handle arrays (e.g., "string[]")
-      const arrayType = value[0].replace("[]", ""); // Extract the type from "string[]"
-      typeDefinition += `  ${key}: "${arrayType}[]",\n`;
+      const arrayType = getValueType(value);
+      lines.push(`  ${key}: "${arrayType}[]",`);
     } else if (typeof value === "object" && !Array.isArray(value)) {
       // Handle nested objects
       const nestedTypeName = `${typeName}_${key}`;
-      let typeDef = ``;
-      typeDefinition += `  ${key}: ${nestedTypeName},\n`;
-      // Recursively generate the nested type definition
-      typeDef += jsonSchemaToTypeScript(value, nestedTypeName);
-      newtypes.push(typeDef);
+      lines.push(`  ${key}: ${nestedTypeName},`);
+      const nestedType = createNestedType(value, nestedTypeName);
+      nestedTypes.push(nestedType);
     }
   }
-  typeDefinition += `});\n\n`;
 
-  let out = ``;
-  for (const newtype of newtypes) {
-    out += newtype;
+  lines.push(`});`);
+  return [nestedTypes.join("\n"), lines.join("\n")].join("\n");
+}
+
+function getValueType(value: any[]): string {
+  return value[0].replace("[]", "");
+}
+
+function createNestedType(value: Record<string, any>, typeName: string): string {
+  const lines: string[] = [];
+  lines.push(`export const ${typeName} = type({`);
+  
+  for (const [key, val] of Object.entries(value)) {
+    if (typeof val === "string") {
+      lines.push(`  ${key}: "${val}",`);
+    }
   }
-  return out + typeDefinition;
+  
+  lines.push(`});`);
+  return lines.join("\n");
 }
 
 // Read the JSON schema from a file
@@ -40,8 +58,7 @@ const schemaFileContent = fs.readFileSync(schemaFilePath, "utf-8");
 const schema = JSON.parse(schemaFileContent);
 
 // Generate TypeScript types for each schema
-let typeScriptCode = `import {type} from "arktype"
-  `;
+let typeScriptCode = `import {type} from "arktype"\n\n`;
 for (const [typeName, typeSchema] of Object.entries(schema)) {
   typeScriptCode += jsonSchemaToTypeScript(
     typeSchema as Record<string, any>,
